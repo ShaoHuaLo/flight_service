@@ -3,10 +3,6 @@ package flightapp;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
-import java.security.*;
-import java.security.spec.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
 
 /**
  * Runs queries against a back-end database
@@ -23,11 +19,30 @@ public class Query {
   private static final String CHECK_FLIGHT_CAPACITY = "SELECT capacity FROM Flights WHERE fid = ?";
   private PreparedStatement checkFlightCapacityStatement;
 
+  private static final String Clear_table = "TRUNCATE TABLE Users" +
+          "TRUNCATE TABLE Itinerary" + "TRUNCATE TABLE Reservation";
+  private  PreparedStatement ClearTableStatement;
+
+  private static final String ADD_USER = "INSERT INTO Users VALUES(?,?,?)";
+  private PreparedStatement AddUserStatement;
+
+  private static final String search = "SELECT TOP(?) itinerary_id" +
+          "FROM Itinerary" +
+          "WHERE origin_city=? AND dest_city=? AND hop=? AND month=?";
+  private PreparedStatement searchStatement;
+
+
+  private static final String LogIn = "SELECT username, password FROM Users WHERE username = ? AND password = ?";
+  private PreparedStatement logInStatement;
+
+
+
   // For check dangling
   private static final String TRANCOUNT_SQL = "SELECT @@TRANCOUNT AS tran_count";
   private PreparedStatement tranCountStatement;
 
   // TODO: YOUR CODE HERE
+  private String currentUser = "";
 
   public Query() throws SQLException, IOException {
     this(null, null, null, null);
@@ -105,6 +120,8 @@ public class Query {
    */
   public void clearTables() {
     try {
+      ClearTableStatement.executeUpdate();
+
       // TODO: YOUR CODE HERE
     } catch (Exception e) {
       e.printStackTrace();
@@ -117,6 +134,10 @@ public class Query {
   private void prepareStatements() throws SQLException {
     checkFlightCapacityStatement = conn.prepareStatement(CHECK_FLIGHT_CAPACITY);
     tranCountStatement = conn.prepareStatement(TRANCOUNT_SQL);
+    ClearTableStatement = conn.prepareStatement(Clear_table);
+    AddUserStatement = conn.prepareStatement(ADD_USER);
+    logInStatement = conn.prepareStatement(LogIn);
+    searchStatement = conn.prepareStatement(search);
     // TODO: YOUR CODE HERE
   }
 
@@ -130,12 +151,28 @@ public class Query {
    *         errors, return "Login failed\n". Otherwise, return "Logged in as [username]\n".
    */
   public String transaction_login(String username, String password) {
+
     try {
-      // TODO: YOUR CODE HERE
-      return "Login failed\n";
+//      ResultSet result = null;
+      if(!currentUser.isEmpty()){
+        return "User already logged in\n";
+      }
+      byte[] passwordBytes = password.getBytes();
+      logInStatement.setString(1, username);
+      logInStatement.setBytes(2, passwordBytes);
+      ResultSet result = logInStatement.executeQuery();
+      if (result.next() == false) {
+        return "Login failed\n";
+      }
+
+      currentUser = username;
+
+    } catch (SQLException throwables) {
+      throwables.printStackTrace();
     } finally {
       checkDanglingTransaction();
     }
+    return " Logged in as " +username + "\n";
   }
 
   /**
@@ -151,10 +188,25 @@ public class Query {
   public String transaction_createCustomer(String username, String password, int initAmount) {
     try {
       // TODO: YOUR CODE HERE
-      return "Failed to create user\n";
+      if(initAmount < 0){
+        return "Failed to create user\n";
+      }
+      AddUserStatement.setString(1,username);
+      byte[] passwordBytes = password.getBytes();
+      AddUserStatement.setBytes(2,passwordBytes);
+
+      AddUserStatement.setInt(3,initAmount);
+
+      int numOfResultRows = AddUserStatement.executeUpdate();
+      if(numOfResultRows==0){
+        return "Failed to create user\n";
+      }
+    } catch (SQLException throwables) {
+      throwables.printStackTrace();
     } finally {
       checkDanglingTransaction();
     }
+  return "Created user: "+username+ "\n";
   }
 
   /**
@@ -195,7 +247,6 @@ public class Query {
       // of it all and replace it with your own implementation.
       //
       // TODO: YOUR CODE HERE
-
       StringBuffer sb = new StringBuffer();
 
       try {
