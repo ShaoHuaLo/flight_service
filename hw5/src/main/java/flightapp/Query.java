@@ -567,10 +567,11 @@ public class Query {
                 rollbackStatement.executeUpdate();
                 conn.setAutoCommit(true);
                 result.close();
-                return "the reservation: "+ reservationId + "is not found";
+                return "the reservation: "+ reservationId + " is not found";
             }
             //get the payment due
-            result.next();
+
+
             int paymentDue = result.getInt(2);
 
 
@@ -612,7 +613,7 @@ public class Query {
             conn.setAutoCommit(true);
             result.close();
 
-            return "payment succeed, payement: " + paymentDue + "ReservationID: " + reservationId;
+            return "payment succeed, payement: " + paymentDue + " ReservationID: " + reservationId;
         } catch (SQLException e) {
             e.printStackTrace();
             return "failed to pay the reservation";
