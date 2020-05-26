@@ -329,7 +329,7 @@ The methods you need to provide are indicated in the starter code, where they ex
   Within a single session (that is, a single instance of your program), only one user should be logged in. A good practice is for every test case to begin with a login request. Make sure you log the User out when the prograsm terminates. To keep things simple, you can track the login status of a User  using a local variable in your program. You should not need to track a user's login status inside the database. 
   If a second login attempt is made, please return "User already logged in".
  
-- **search** takes as input an origin city (string), a destination city (string), a flag for only direct flights or not (0 or 1), the date (int), and the maximum number of itineraries to be returned (int).
+- **search** takes as input an origin city (string), a destination city (string), a flag for a flag foonly direct flights or not (0 or 1), the date (int), and the maximum number of itineraries to be returned (int).
   For the date, we only need the day of the month, since our dataset comes from July 2015. Return only flights that are not canceled, ignoring the capacity and number of seats available.
   If the user requests n itineraries to be returned, there are a number of possibilities:
     * direct=1: return up to n direct itineraries
