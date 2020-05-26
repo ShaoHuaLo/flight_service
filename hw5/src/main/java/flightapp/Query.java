@@ -551,6 +551,7 @@ public class Query {
 
         // TODO: YOUR CODE HERE
         try {
+            conn.setAutoCommit(false);
             beginTransactionStatement.executeUpdate();
             //check validity of reservationId
             String checkRid = "SELECT rid, price FROM Reservation WHERE rid = ? AND username = ?;";
@@ -564,6 +565,7 @@ public class Query {
 
             if(!result.next()){
                 rollbackStatement.executeUpdate();
+                conn.setAutoCommit(true);
                 result.close();
                 return "the reservation: "+ reservationId + "is not found";
             }
@@ -583,6 +585,7 @@ public class Query {
             int balance = result.getInt(1);
             if (balance < paymentDue) {
                 rollbackStatement.executeUpdate();
+                conn.setAutoCommit(true);
                 result.close();
                 return "balance is not enough to cover the payment of "+ paymentDue + "\ncurrent balance: "
                         + balance +"\n";
@@ -606,6 +609,7 @@ public class Query {
             updateReservationPs.setInt(2, reservationId);
             updateReservationPs.executeUpdate();
             commitStatement.executeUpdate();
+            conn.setAutoCommit(true);
             result.close();
 
             return "payment succeed, payement: " + paymentDue + "ReservationID: " + reservationId;
