@@ -665,9 +665,14 @@ public class Query {
                 int r_rid = rs.getInt(1);
                 int r_iid = rs.getInt(2);
                 int r_paid = rs.getInt(3);
+                if (!itineraries.containsKey(r_iid)) {
+                    continue;
+                }
                 String paid = (r_paid == 1) ? "true" : "false";
 
                 sb.append("Reservation ").append(r_rid).append(" paid: ").append(paid).append(":\n");
+                // because itineraries is a temporal repository.
+
                 Itinerary currentItinerary = itineraries.get(r_iid);
                 int r_fid1 = currentItinerary.fid1;
                 int r_fid2 = currentItinerary.fid2;
@@ -751,13 +756,68 @@ public class Query {
      *         Even though a reservation has been canceled, its ID should not be reused by the system.
      */
     public String transaction_cancel(int reservationId) {
-            try {
+        if(this.currentUser == null){
+            return "Cannot cancel reservations, not logged in\n";
+        }
+
+
+        try {
             // TODO: YOUR CODE HERE
+            conn.setAutoCommit(false);
+            beginTransactionStatement.executeUpdate();
+
+
+            String resQuery = "SELECT rid,paid, price FROM Reservation WHERE rid = ?";
+            PreparedStatement resQueryPs = conn.prepareStatement(resQuery);
+            resQueryPs.clearParameters();
+            resQueryPs.setInt(1,reservationId);
+            ResultSet result = resQueryPs.executeQuery();
+
+            if(!result.next()){
+                rollbackStatement.executeUpdate();
+                conn.setAutoCommit(true);
+                return " Failed to cancel reservation " +  reservationId + "\n";
+            }
+
+            boolean paid = result.getInt(2) == 1? true:false;
+            int price = result.getInt(3);
+
+            //get current balance
+            String getBalance = "SELECT balance FROM Users WHERE username = ?";
+            PreparedStatement getBalancePs = conn.prepareStatement(getBalance);
+            getBalancePs.clearParameters();
+            getBalancePs.setString(1,currentUser);
+            ResultSet resultBalance = getBalancePs.executeQuery();
+            resultBalance.next();
+            int currentBalance = resultBalance.getInt(1);
+
+
+            if(paid){
+                String refundUser = "UPDATE Users SET balance = ? WHERE username = ?";
+                PreparedStatement refundUserPs = conn.prepareStatement(refundUser);
+                refundUserPs.clearParameters();
+                refundUserPs.setInt(1,currentBalance + price);
+                refundUserPs.setString(2,currentUser);
+                refundUserPs.executeUpdate();
+            }
+
+            //remove canceled Reservation from Reservation table
+            String removeCanceled = "DELETE FROM Reservation WHERE rid = ?";
+            PreparedStatement removeCanceledPs = conn.prepareStatement(removeCanceled);
+            removeCanceledPs.clearParameters();
+            removeCanceledPs.setInt(1,reservationId);
+            removeCanceledPs.executeUpdate();
+
+            commitStatement.executeUpdate();
+            conn.setAutoCommit(true);
+
+        }catch(SQLException e){
             return "Failed to cancel reservation " + reservationId + "\n";
-            } finally {
+        } finally {
             checkDanglingTransaction();
-            }
-            }
+        }
+        return "Canceled reservation " +  reservationId + "\n";
+    }
 
     /**
      * Example utility function that uses prepared statements
