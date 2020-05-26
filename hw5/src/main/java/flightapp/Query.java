@@ -267,16 +267,16 @@ public class Query {
         try {
             int count = 0;
             // df for direct flights
-            String dfQuery = "SELECT TOP (?) fid,day_of_month,carrier_id,flight_num,origin_city,dest_city,actual_time,capacity,price "
+            String dfQuery = "SELECT TOP (?) fid,day_of_month_id,carrier_id,flight_num,origin_city,dest_city,actual_time,capacity,price "
                     + "FROM Flights "
-                    + "WHERE origin_city like %?% AND dest_city like %?% AND day_of_month = ? AND canceled = 0 "
+                    + "WHERE origin_city like ? AND dest_city like ? AND day_of_month_id = ? AND canceled = 0 "
                     + "ORDER BY actual_time ASC, fid ASC";
             PreparedStatement ps = conn.prepareStatement(dfQuery);
 
             ps.clearParameters();
             ps.setInt(1, numberOfItineraries);
-            ps.setString(2, originCity);
-            ps.setString(3, destinationCity);
+            ps.setString(2, "%"+originCity+"%");
+            ps.setString(3, "%"+destinationCity+"%");
             ps.setInt(4, dayOfMonth);
 
             ResultSet df = ps.executeQuery();
@@ -284,7 +284,7 @@ public class Query {
             while (df.next()) {
                 int result_fid = df.getInt("fid");
                 //System.out.println(result_fid);
-                int result_dayOfMonth = df.getInt("day_of_month");
+                int result_dayOfMonth = df.getInt("day_of_month_id");
                 String result_carrierId = df.getString("carrier_id");
                 String result_flightNum = df.getString("flight_num");
                 String result_originCity = df.getString("origin_city");
@@ -316,11 +316,11 @@ public class Query {
             boolean executeIndf = count < numberOfItineraries & !directFlight;
             if (executeIndf) {
                 int totalIndf = numberOfItineraries - count;
-                String indfQuery = "SELECT TOP (?) F1.fid,F1.day_of_month,F1.carrier_id,F1.flight_num,F1.origin_city,F1.dest_city,F1.actual_time,F1.capacity,F1.price,"
+                String indfQuery = "SELECT TOP (?) F1.fid,F1.day_of_month_id,F1.carrier_id,F1.flight_num,F1.origin_city,F1.dest_city,F1.actual_time,F1.capacity,F1.price,"
                         + "F2.fid,F2.carrier_id,F2.flight_num,F2.origin_city,F2.dest_city,F2.actual_time,F2.capacity,F2.price "
                         + "FROM Flights AS F1, Flights AS F2 "
                         + "WHERE F1.origin_city = ? AND F1.dest_city = F2.origin_city AND F2.dest_city = ? "
-                        + "AND F1.day_of_month = F2.day_of_month AND F1.month_id = F2.month_id AND F1.day_of_month = ? "
+                        + "AND F1.day_of_month_id = F2.day_of_month_id AND F1.month_id = F2.month_id AND F1.day_of_month_id = ? "
                         + "AND F1.canceled = 0 AND F2.canceled = 0 "
                         + "ORDER BY (F1.actual_time + F2.actual_time) ASC, F1.fid ASC, F2.fid ASC";
 
@@ -672,7 +672,7 @@ public class Query {
 
                 sb.append("Reservation ").append(r_rid).append(" paid: ").append(paid).append(":\n");
 
-                String flightQuery = "SELECT fid, day_of_month, carrier_id, flight_num, origin_city,"
+                String flightQuery = "SELECT fid, day_of_month_id, carrier_id, flight_num, origin_city,"
                         + "dest_city, actual_time, capacity, price FROM Flights WHERE fid = ?;\n";
                 ps = conn.prepareStatement(flightQuery);
                 ps.clearParameters();
@@ -681,7 +681,7 @@ public class Query {
                 frs.next();
 
                 int rf_fid = frs.getInt(1);  // rf for result [from] flight
-                int rf_day_of_month = frs.getInt(2);
+                int rf_day_of_month_id = frs.getInt(2);
                 String rf_cid = frs.getString(3);
                 int rf_flight_num = frs.getInt(4);
                 String rf_org_city = frs.getString(5);
@@ -690,7 +690,7 @@ public class Query {
                 int rf_capacity = frs.getInt(8);
                 int rf_price = frs.getInt(9);
 
-                sb.append("ID: ").append(rf_fid).append(" Day: ").append(rf_day_of_month)
+                sb.append("ID: ").append(rf_fid).append(" Day: ").append(rf_day_of_month_id)
                         .append(" Carrier: ").append(rf_cid).append(" Number: ").append(rf_flight_num)
                         .append(" Origin: ").append(rf_org_city).append(" Dest: ").append(rf_dest_city)
                         .append(" Duration: ").append(rf_actual_time).append(" Capacity: ").append(rf_capacity)
@@ -704,7 +704,7 @@ public class Query {
                     frs.next();
 
                     rf_fid = frs.getInt(1);
-                    rf_day_of_month = frs.getInt(2);
+                    rf_day_of_month_id = frs.getInt(2);
                     rf_cid = frs.getString(3);
                     rf_flight_num = frs.getInt(4);
                     rf_org_city = frs.getString(5);
@@ -713,7 +713,7 @@ public class Query {
                     rf_capacity = frs.getInt(8);
                     rf_price = frs.getInt(9);
 
-                    sb.append("ID: ").append(rf_fid).append(" Day: ").append(rf_day_of_month)
+                    sb.append("ID: ").append(rf_fid).append(" Day: ").append(rf_day_of_month_id)
                             .append(" Carrier: ").append(rf_cid).append(" Number: ").append(rf_flight_num)
                             .append(" Origin: ").append(rf_org_city).append(" Dest: ").append(rf_dest_city)
                             .append( "Duration: ").append(rf_actual_time).append(" Capacity: ").append(rf_actual_time)
