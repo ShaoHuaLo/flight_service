@@ -4,7 +4,7 @@ password varbinary(20) NOT NULL,
 balance int NOT NULL
 );
 
-CREATE TABLE Researvation(
+CREATE TABLE Reservation(
 rid int,
 iid int,
 username varchar(20) REFERENCES Users,

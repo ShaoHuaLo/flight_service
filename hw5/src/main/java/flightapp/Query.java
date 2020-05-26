@@ -105,6 +105,9 @@ public class Query {
     private void prepareStatements() throws SQLException {
         checkFlightCapacityStatement = conn.prepareStatement(CHECK_FLIGHT_CAPACITY);
         tranCountStatement = conn.prepareStatement(TRANCOUNT_SQL);
+        beginTransactionStatement = conn.prepareStatement(Begin_Transaction);
+        commitStatement = conn.prepareStatement(Commit);
+        rollbackStatement = conn.prepareStatement(Roll_Back);
 
         // TODO: YOUR CODE HERE
     }
@@ -447,6 +450,7 @@ public class Query {
         try{
             int cap1 = 0;
             int cap2 = 0;
+            conn.setAutoCommit(false);
             beginTransactionStatement.executeUpdate();
 
             //first flight check
@@ -460,6 +464,7 @@ public class Query {
 
             if(cap1<1){
                 rollbackStatement.executeUpdate();
+                conn.setAutoCommit(true);
                 result.close();
                 return "this flight is full, booking failed\n";
             }
@@ -472,6 +477,7 @@ public class Query {
                 cap2 = result.getInt(1);
                 if(cap2<1){
                     rollbackStatement.executeUpdate();
+                    conn.setAutoCommit(true);
                     result.close();
                     return "second flight is full, book failed\n";
                 }
@@ -513,6 +519,7 @@ public class Query {
 
 
             commitStatement.executeUpdate();
+            conn.setAutoCommit(true);
             result.close();
             return "Booked flight(s), reservation ID: " + rid + "\n";
 
