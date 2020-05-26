@@ -18,7 +18,7 @@ public class Query {
 
     // TODO: YOUR CODE HERE
     private String currentUser = "";
-    public Itinerary[] itineraries;
+    private Map<Integer, Itinerary> itineraries = new HashMap<>();
 
     public Query() throws SQLException, IOException {
         this(null, null, null, null);
@@ -265,7 +265,6 @@ public class Query {
                                      int numberOfItineraries)
     {
         StringBuffer sb = new StringBuffer();
-        itineraries = new Itinerary[numberOfItineraries];
 
         try {
             int count = 0;
@@ -310,7 +309,7 @@ public class Query {
                         .append(" Price: ").append(result_price)
                         .append("\n");
 
-                itineraries[count] = new Itinerary(count, result_fid, -1, result_price, result_dayOfMonth);
+                itineraries.put(count, new Itinerary(count, result_fid, -1, result_price, result_dayOfMonth));
 
                 count++;
             }
@@ -379,7 +378,7 @@ public class Query {
                             .append(" Price: ").append(r_price2)
                             .append("\n");
 
-                    itineraries[count] = new Itinerary(count, r_fid1, r_fid2, r_price1 + r_price2, r_dayOfMonth);
+                    itineraries.put(count, new Itinerary(count, r_fid1, r_fid2, r_price1 + r_price2, r_dayOfMonth));
 
                     count++;
                 }
@@ -427,24 +426,10 @@ public class Query {
             return "booking failed" + "no such itineraryId: " + itineraryId + "\nyou have to search for valid itineraryId first!" +"\n";
         }
 
-        int index = 0;
-        boolean validId = false;
-        try{
-            while(itineraries[index] != null){
-                if(itineraries[index].iid == itineraryId){
-                    validId = true;
-                    break;
-                }
-                index++;
-            }
-        }catch(ArrayIndexOutOfBoundsException e){
+        if (!itineraries.containsKey(itineraryId)) {
             return "booking failed" + "no such itineraryId: " + itineraryId + "\n";
         }
-        if(!validId){
-            return "booking failed" + "no such itineraryId: " + itineraryId + "\n";
-        }
-
-        Itinerary book = itineraries[index];    //itinerary(iid, fid1, fid2, price, day)
+        Itinerary book = itineraries.get(itineraryId);    //itinerary(iid, fid1, fid2, price, day)
 
         //check capacity
         try{
@@ -666,9 +651,10 @@ public class Query {
         }
 
         try {
+            conn.setAutoCommit(false);
             beginTransactionStatement.executeUpdate();
 
-            String resQuery = "SELECT rid, paid, fid1, fid2 FROM Reservations WHERE username = ?;\n";
+            String resQuery = "SELECT rid, iid, paid FROM Reservation WHERE username = ?;\n";
             PreparedStatement ps = conn.prepareStatement(resQuery);
             ps.clearParameters();
             ps.setString(1, this.currentUser);
@@ -677,13 +663,14 @@ public class Query {
             StringBuffer sb = new StringBuffer();
             while (rs.next()) {
                 int r_rid = rs.getInt(1);
-                int r_paid = rs.getInt(2);
-                int r_fid1 = rs.getInt(3);
-                int r_fid2 = rs.getInt(4);
+                int r_iid = rs.getInt(2);
+                int r_paid = rs.getInt(3);
                 String paid = (r_paid == 1) ? "true" : "false";
 
                 sb.append("Reservation ").append(r_rid).append(" paid: ").append(paid).append(":\n");
-
+                Itinerary currentItinerary = itineraries.get(r_iid);
+                int r_fid1 = currentItinerary.fid1;
+                int r_fid2 = currentItinerary.fid2;
                 String flightQuery = "SELECT fid, day_of_month_id, carrier_id, flight_num, origin_city,"
                         + "dest_city, actual_time, capacity, price FROM Flights WHERE fid = ?;\n";
                 ps = conn.prepareStatement(flightQuery);
@@ -737,6 +724,7 @@ public class Query {
             rs.close();
             if (sb.toString().equals("")) {
                 rollbackStatement.executeUpdate();
+                conn.setAutoCommit(true);
                 return "No reservations found\n";
             } else {
                 commitStatement.executeUpdate();
@@ -848,7 +836,7 @@ public class Query {
         }
         @Override
         public String toString(){
-            return "iid" + iid;
+            return "iid: " + iid + " fid1: " + fid1 + " fid2: " + fid2 + " price: " + price + " day: " +day;
         }
     }
 
