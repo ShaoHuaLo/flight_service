@@ -516,7 +516,7 @@ public class Query {
             updateReservationPs.setInt(4,0); //paid
             updateReservationPs.setInt(5,0); //canceled
             updateReservationPs.setInt(6,book.price);//price
-
+            updateReservationPs.executeUpdate();
 
             commitStatement.executeUpdate();
             conn.setAutoCommit(true);
