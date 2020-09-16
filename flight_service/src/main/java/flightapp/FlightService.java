@@ -36,7 +36,7 @@ public class FlightService {
         String username = tokens[1];
         String password = tokens[2];
         int initAmount = Integer.parseInt(tokens[3]);
-        response = q.transaction_createCustomer(username, password, initAmount);
+        response = q.createUser(username, password, initAmount);
       } else {
         response = "Error: Please provide a username, password, and initial amount in the account";
       }
@@ -64,7 +64,7 @@ public class FlightService {
     else if (tokens[0].equals("book")) {
       if (tokens.length == 2) {
         int itinerary_id = Integer.parseInt(tokens[1]);
-        response = q.transaction_book(itinerary_id);
+        response = q.book(itinerary_id);
       } else {
         response = "Error: Please provide an itinerary_id";
       }
